@@ -438,23 +438,57 @@
     }
 
     function adjustShenCharSize(mode) {
-        var flowModes = ['liuNian', 'liuYue', 'liuRi', 'liuShi'];
-        if (flowModes.indexOf(mode) === -1) return;
         var grid = document.getElementById('palaceGrid');
         if (!grid) return;
         var gridWidth = grid.offsetWidth;
         var shenChars = document.querySelectorAll('.left-info .shen-char');
+
         if (gridWidth >= 900) {
             shenChars.forEach(function(el) {
                 el.style.fontSize = '';
             });
-        } else {
+            return;
+        }
+
+        var flowModes = ['liuNian', 'liuYue', 'liuRi', 'liuShi'];
+        var isFlow = flowModes.indexOf(mode) !== -1;
+
+        var hasOverlap = false;
+        var cells = document.querySelectorAll('.palace-cell');
+        cells.forEach(function(cell) {
+            var leftInfo = cell.querySelector('.left-info');
+            var palaceName = cell.querySelector('.palace-name');
+            var daXian = cell.querySelector('.da-xian');
+            if (!leftInfo || !palaceName) return;
+            var leftRect = leftInfo.getBoundingClientRect();
+            var nameRect = palaceName.getBoundingClientRect();
+
+            if (leftRect.right > nameRect.left) {
+                hasOverlap = true;
+                return;
+            }
+            if (daXian) {
+                var daXianRect = daXian.getBoundingClientRect();
+                if (leftRect.right > daXianRect.left) {
+                    hasOverlap = true;
+                    return;
+                }
+            }
+        });
+
+        var shouldShrink = isFlow || hasOverlap;
+
+        if (shouldShrink) {
             shenChars.forEach(function(el) {
                 el.style.fontSize = '';
                 var currentSize = parseFloat(window.getComputedStyle(el).fontSize);
                 if (!isNaN(currentSize) && currentSize > 0) {
                     el.style.fontSize = (currentSize * 0.8) + 'px';
                 }
+            });
+        } else {
+            shenChars.forEach(function(el) {
+                el.style.fontSize = '';
             });
         }
     }

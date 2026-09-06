@@ -1344,9 +1344,8 @@
             // 如果是流年及以下，调整四化标签和十二神字号
             if (mode === 'liuNian' || mode === 'liuYue' || mode === 'liuRi' || mode === 'liuShi') {
                 ZiWeiRender.adjustTransformFontSizeIfOverlap();
-                ZiWeiRender.adjustShenCharSize(mode);
             }
-
+            ZiWeiRender.adjustShenCharSize(mode);
             ZiWeiRender.bindPalaceClick(palaceClickHandler);
 
             errorDiv.style.display = 'none';
@@ -1423,6 +1422,24 @@
         setCurrentTime();
         updateDiskControls();
         onCalculate();
+
+        var toggleBtn = document.getElementById('toggleCenterBtn');
+        var cover = document.getElementById('centerCover');
+        if (toggleBtn && cover) {
+            var isHidden = false;
+            toggleBtn.addEventListener('click', function() {
+                isHidden = !isHidden;
+                if (isHidden) {
+                    cover.style.display = 'flex';
+                    toggleBtn.textContent = '显示';
+                    toggleBtn.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.2)';
+                } else {
+                    cover.style.display = 'none';
+                    toggleBtn.textContent = '隐藏';
+                    toggleBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+            });
+        }
 
         window.addEventListener('resize', scheduleRecalc);
         window.addEventListener('orientationchange', scheduleRecalc);
