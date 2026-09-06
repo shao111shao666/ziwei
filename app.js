@@ -1325,6 +1325,17 @@
 
     window.switchCalendar = switchCalendar;
 
+    // ---- 防抖刷新（解决横竖屏旋转后星耀排列问题） ----
+    var resizeTimer;
+    function scheduleRecalc() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if (typeof onCalculate === 'function') {
+                onCalculate();
+            }
+        }, 350);
+    }
+
     window.addEventListener('load', function() {
         YuanPan.setupBranding();
 
@@ -1355,10 +1366,10 @@
         setCurrentTime();
         updateDiskControls();
         onCalculate();
-    });
 
-    window.addEventListener('resize', function() {
-        if (typeof onCalculate === 'function') onCalculate();
+        // 监听 resize 和 orientationchange
+        window.addEventListener('resize', scheduleRecalc);
+        window.addEventListener('orientationchange', scheduleRecalc);
     });
 
 })();
