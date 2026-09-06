@@ -1,6 +1,5 @@
 (function() {
     'use strict';
-
     function getMarkColor(type) {
         switch(type) {
             case '禄': return '#006400';
@@ -10,25 +9,21 @@
             default: return 'gray';
         }
     }
-
     function applyHighlight(targetZhi) {
         var cells = document.querySelectorAll('.palace-cell');
         cells.forEach(function(c) {
             c.classList.remove('ming-bg', 'special-bg');
         });
         if (!targetZhi) return;
-
         var allZhi = ZiWeiCore.diZhi;
         var idx = allZhi.indexOf(targetZhi);
         if (idx === -1) return;
-
         var caiIdx = (idx + 4) % 12;
         var qianIdx = (idx + 6) % 12;
         var guanIdx = (idx + 8) % 12;
         var caiZhi = allZhi[caiIdx];
         var qianZhi = allZhi[qianIdx];
         var guanZhi = allZhi[guanIdx];
-
         cells.forEach(function(c) {
             var zhi = c.getAttribute('data-dizhi');
             if (zhi === targetZhi) {
@@ -38,7 +33,6 @@
             }
         });
     }
-
     function bindPalaceClick(handler) {
         var cells = document.querySelectorAll('.palace-cell');
         cells.forEach(function(cell) {
@@ -46,7 +40,6 @@
             cell.addEventListener('click', handler);
         });
     }
-
     function renderStarsToPalace(starData, fourTransform, baseTransformMap, highTransformMap, lowTransformMap, highPrefix, lowPrefix) {
         var cells = document.querySelectorAll('.palace-cell');
         var isMobile = window.innerWidth <= 750;
@@ -54,7 +47,6 @@
         var defaultGap = 3;
         var miscMinSize = isMobile ? 8 : 9;
         var miscMaxSize = fixedSize;
-
         var flowColorMap = {
             '限': '#00CED1',
             '年': '#FF8C00',
@@ -62,7 +54,6 @@
             '日': '#E91E63',
             '时': '#607D8B'
         };
-
         function getFlowColor(starName) {
             var prefixes = ['限','年','月','日','时'];
             for (var pi = 0; pi < prefixes.length; pi++) {
@@ -70,9 +61,7 @@
             }
             return '#008080';
         }
-
         var flowTransformMap = {};
-
         function addFlowTransform(prefix, starName, marks) {
             if (!starName || !marks) return;
             var flowStarName = '';
@@ -82,7 +71,6 @@
             if (!flowTransformMap[flowStarName]) flowTransformMap[flowStarName] = [];
             flowTransformMap[flowStarName].push.apply(flowTransformMap[flowStarName], marks);
         }
-
         if (highTransformMap && highPrefix) {
             for (var key in highTransformMap) {
                 if (highTransformMap.hasOwnProperty(key)) {
@@ -101,7 +89,6 @@
                 }
             }
         }
-
         var highTransformForStars = highTransformMap ? JSON.parse(JSON.stringify(highTransformMap)) : null;
         var lowTransformForStars = lowTransformMap ? JSON.parse(JSON.stringify(lowTransformMap)) : null;
         if (highTransformForStars) {
@@ -112,7 +99,6 @@
             delete lowTransformForStars['文昌'];
             delete lowTransformForStars['文曲'];
         }
-
         function buildYuanJuElements(starNames, zhi, gap, miscSize) {
             var fragment = document.createDocumentFragment();
             starNames.forEach(function(item) {
@@ -123,14 +109,12 @@
                 starDiv.style.display = 'flex';
                 starDiv.style.flexDirection = 'column';
                 starDiv.style.alignItems = 'center';
-
                 var nameSpan = document.createElement('span');
                 nameSpan.className = 'star-name';
                 nameSpan.textContent = item.name;
                 nameSpan.style.color = ZiWeiCore.getStarColor(item.name);
                 nameSpan.style.fontSize = fontSize + 'px';
                 starDiv.appendChild(nameSpan);
-
                 var miao = ZiWeiCore.getMiaoXian(item.name, zhi);
                 if (miao) {
                     var miaoSpan = document.createElement('span');
@@ -139,7 +123,6 @@
                     miaoSpan.style.fontSize = (fontSize * 0.75) + 'px';
                     starDiv.appendChild(miaoSpan);
                 }
-
                 function createRowContainer() {
                     var container = document.createElement('div');
                     container.style.display = 'flex';
@@ -150,7 +133,6 @@
                     container.style.flexShrink = '0';
                     return container;
                 }
-
                 var baseRow = createRowContainer();
                 var baseMarks = baseTransformMap ? baseTransformMap[item.name] : null;
                 if (baseMarks) {
@@ -169,7 +151,6 @@
                     });
                 }
                 starDiv.appendChild(baseRow);
-
                 var highRow = createRowContainer();
                 var highMarks = highTransformForStars ? highTransformForStars[item.name] : null;
                 if (highMarks && highPrefix) {
@@ -189,7 +170,6 @@
                     });
                 }
                 starDiv.appendChild(highRow);
-
                 var lowRow = createRowContainer();
                 var lowMarks = lowTransformForStars ? lowTransformForStars[item.name] : null;
                 if (lowMarks && lowPrefix) {
@@ -209,12 +189,10 @@
                     });
                 }
                 starDiv.appendChild(lowRow);
-
                 fragment.appendChild(starDiv);
             });
             return fragment;
         }
-
         function buildFlowRowsFromPrefixes(flowList, prefix, fixedSize) {
             if (!prefix) {
                 var emptyRow = document.createElement('div');
@@ -227,7 +205,6 @@
                 emptyRow.style.gap = '1px';
                 return emptyRow;
             }
-
             var rowDiv = document.createElement('div');
             rowDiv.className = 'flow-row';
             rowDiv.style.display = 'flex';
@@ -236,7 +213,6 @@
             rowDiv.style.justifyContent = 'flex-end';
             rowDiv.style.minHeight = '1.2em';
             rowDiv.style.gap = '1px';
-
             if (flowList && flowList.length > 0) {
                 flowList.forEach(function(name) {
                     if (name.startsWith(prefix)) {
@@ -274,25 +250,20 @@
             }
             return rowDiv;
         }
-
         var measureContainer = document.createElement('div');
         measureContainer.style.cssText =
             'position: absolute; visibility: hidden; display: flex; flex-direction: row; flex-wrap: nowrap;' +
             'align-items: flex-start; font-weight: 700; line-height: 1.2; pointer-events: none;' +
             'width: auto; background: transparent; padding: 0; margin: 0; top: -9999px; left: -9999px;';
         document.body.appendChild(measureContainer);
-
         function getContainerWidth(container) { return container.scrollWidth; }
-
         function isOverflowing(container) { return container.scrollWidth > container.clientWidth + 1; }
-
         cells.forEach(function(cell) {
             var zhi = cell.getAttribute('data-dizhi');
             var yuanJuContainer = cell.querySelector('.star-top-left');
             var flowContainer = cell.querySelector('.flow-container');
             var liuPanLabel = cell.querySelector('.liu-pan-label');
             if (!yuanJuContainer || !flowContainer || !liuPanLabel) return;
-
             var grouped = ZiWeiCore.getStarsByPalace(zhi, starData);
             var yuanJuList = [];
             ['main','auspicious','malefic','misc'].forEach(function(cat) {
@@ -301,16 +272,13 @@
                 });
             });
             var flowList = grouped.flow;
-
             yuanJuContainer.innerHTML = '';
             flowContainer.innerHTML = '';
             liuPanLabel.innerHTML = '';
-
             var highRow = buildFlowRowsFromPrefixes(flowList, highPrefix || '', fixedSize);
             var lowRow = buildFlowRowsFromPrefixes(flowList, lowPrefix || '', fixedSize);
             flowContainer.appendChild(highRow);
             flowContainer.appendChild(lowRow);
-
             if (starData.__liuPanLabels && starData.__liuPanLabels[zhi]) {
                 var labels = starData.__liuPanLabels[zhi];
                 labels.forEach(function(label) {
@@ -336,24 +304,19 @@
                     liuPanLabel.appendChild(col);
                 });
             }
-
             if (yuanJuList.length === 0) return;
-
             var fixedGroup = yuanJuList.filter(function(item) { return item.category !== 'misc'; });
             var miscGroup = yuanJuList.filter(function(item) { return item.category === 'misc'; });
-
             if (miscGroup.length === 0) {
                 var fragment = buildYuanJuElements(yuanJuList, zhi, defaultGap, fixedSize);
                 yuanJuContainer.appendChild(fragment);
                 yuanJuContainer.style.gap = defaultGap + 'px';
                 return;
             }
-
             var tempFragment = buildYuanJuElements(yuanJuList, zhi, defaultGap, fixedSize);
             yuanJuContainer.appendChild(tempFragment);
             yuanJuContainer.style.gap = defaultGap + 'px';
             if (!isOverflowing(yuanJuContainer)) return;
-
             measureContainer.innerHTML = '';
             measureContainer.style.gap = defaultGap + 'px';
             var fixedFragment = buildYuanJuElements(fixedGroup, zhi, defaultGap, fixedSize);
@@ -362,7 +325,6 @@
             var containerClientWidth = yuanJuContainer.clientWidth;
             var availableWidth = containerClientWidth - fixedWidth - defaultGap;
             if (availableWidth <= 0) availableWidth = containerClientWidth * 0.3;
-
             var bestMiscSize = miscMaxSize;
             var bestGap = defaultGap;
             var found = false;
@@ -396,21 +358,59 @@
                 }
             }
             if (!found) { bestGap = 1; bestMiscSize = miscMinSize; }
-
             yuanJuContainer.innerHTML = '';
             yuanJuContainer.style.gap = bestGap + 'px';
             var finalFragment = buildYuanJuElements(yuanJuList, zhi, bestGap, bestMiscSize);
             yuanJuContainer.appendChild(finalFragment);
         });
-
         document.body.removeChild(measureContainer);
     }
-
+    function adjustTransformFontSizeIfOverlap() {
+        var cells = document.querySelectorAll('.palace-cell');
+        cells.forEach(function(cell) {
+            var starContainer = cell.querySelector('.star-top-left');
+            var leftInfo = cell.querySelector('.left-info');
+            if (!starContainer || !leftInfo) return;
+            var starRect = starContainer.getBoundingClientRect();
+            var leftRect = leftInfo.getBoundingClientRect();
+            if (starRect.bottom > leftRect.top) {
+                var transformSpans = starContainer.querySelectorAll('.star-transform');
+                transformSpans.forEach(function(span) {
+                    var currentSize = parseFloat(span.style.fontSize);
+                    if (!isNaN(currentSize) && currentSize > 0) {
+                        span.style.fontSize = (currentSize * 0.8) + 'px';
+                    }
+                });
+            }
+        });
+    }
+    function adjustShenCharSize(mode) {
+        var flowModes = ['liuNian', 'liuYue', 'liuRi', 'liuShi'];
+        if (flowModes.indexOf(mode) === -1) return;
+        var grid = document.getElementById('palaceGrid');
+        if (!grid) return;
+        var gridWidth = grid.offsetWidth;
+        var shenChars = document.querySelectorAll('.left-info .shen-char');
+        if (gridWidth >= 900) {
+            shenChars.forEach(function(el) {
+                el.style.fontSize = '';
+            });
+        } else {
+            shenChars.forEach(function(el) {
+                el.style.fontSize = '';
+                var currentSize = parseFloat(window.getComputedStyle(el).fontSize);
+                if (!isNaN(currentSize) && currentSize > 0) {
+                    el.style.fontSize = (currentSize * 0.8) + 'px';
+                }
+            });
+        }
+    }
     window.ZiWeiRender = {
         renderStarsToPalace: renderStarsToPalace,
         applyHighlight: applyHighlight,
         bindPalaceClick: bindPalaceClick,
-        getMarkColor: getMarkColor
+        getMarkColor: getMarkColor,
+        adjustTransformFontSizeIfOverlap: adjustTransformFontSizeIfOverlap,
+        adjustShenCharSize: adjustShenCharSize
     };
-
 })();

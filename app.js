@@ -101,12 +101,30 @@
         }
     }
 
-    function getDateDisplay(year, month, day) {
-        const lunar = ZiWeiCore.solarToLunar(year, month, day);
-        if (!lunar) return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')} (农历转换失败)`;
-        const lunarStr = `${lunar.year}年${lunar.isLeap ? '闰' : ''}${monthNames[lunar.month - 1]}${dayNames[lunar.day - 1]}`;
-        return `公历 ${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}  ↔  农历 ${lunarStr}`;
-    }
+	function getDateDisplay(year, month, day) {
+		const lunar = ZiWeiCore.solarToLunar(year, month, day);
+		if (!lunar) return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')} (农历转换失败)`;
+		const lunarStr = `${lunar.year}年${lunar.isLeap ? '闰' : ''}${monthNames[lunar.month - 1]}${dayNames[lunar.day - 1]}`;
+    
+		// ---- 检查是否为节气日 ----
+		let termName = '';
+		try {
+			const terms = ZiWeiCore.getYearTerms(year);
+			const termNames = ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'];
+			const inputDate = new Date(Date.UTC(year, month - 1, day));
+			for (let i = 0; i < terms.length; i++) {
+				const t = terms[i];
+				if (t.getUTCFullYear() === year && t.getUTCMonth() === month - 1 && t.getUTCDate() === day) {
+					termName = termNames[i];
+					break;
+				}
+			}
+		} catch (e) {
+			// 如果年份不在节气表中（超出1900-2100），忽略错误
+		}
+		const suffix = termName ? ` ${termName}` : '';
+		return `公历 ${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}  ↔  农历 ${lunarStr}${suffix}`;
+	}
 
     function buildDaXianOptions(wuXingNum) {
         const select = document.getElementById('daXianStep');
@@ -585,6 +603,7 @@
             document.querySelectorAll('.star-top-left').forEach(el => el.innerHTML = '');
             document.querySelectorAll('.da-xian').forEach(el => el.textContent = '');
             document.querySelectorAll('.cs-col, .sui-col, .jiang-col, .bo-col').forEach(el => el.innerHTML = '');
+            document.querySelectorAll('#lYearGan, #lYearZhi, #lMonthGan, #lMonthZhi, #lDayGan, #lDayZhi, #lHourGan, #lHourZhi').forEach(el => el.textContent = '');
             return;
         }
 
@@ -698,6 +717,7 @@
             }
             document.getElementById('centerDateInfo').textContent = getDateDisplay(displayYear, displayMonth, displayDay);
 
+            // ---- 节气四柱 ----
             if (pillars) {
                 document.getElementById('cYearGan').textContent = pillars.year[0];
                 document.getElementById('cYearZhi').textContent = pillars.year[1];
@@ -709,10 +729,40 @@
                 document.getElementById('cHourZhi').textContent = pillars.hour[1];
             }
 
+            // ---- 农历四柱（修正：避免重复声明 monthZhi） ----
+            const lunarYearVal = parseInt(document.getElementById('lunarYear').value);
+            const lunarYearGanZhi = ZiWeiCore.getYearGanZhiByLunarYear(lunarYearVal);
+            const lYearGan = lunarYearGanZhi[0];
+            const lYearZhi = lunarYearGanZhi[1];
+
+            // 月支：正月=寅，二月=卯 ... 腊月=丑（使用有效月份）
+            const lMonthZhi = ZiWeiCore.diZhi[(effectiveMonthOriginal + 1) % 12];
+            const lMonthGan = ganZhiMap[lMonthZhi]; // 五虎遁定月干
+
+            // 日柱和时柱与节气相同（公历日干支和时干支）
+            const lDayGan = pillars.day[0];
+            const lDayZhi = pillars.day[1];
+            const lHourGan = pillars.hour[0];
+            const lHourZhi = pillars.hour[1];
+
+            document.getElementById('lYearGan').textContent = lYearGan;
+            document.getElementById('lYearZhi').textContent = lYearZhi;
+            document.getElementById('lMonthGan').textContent = lMonthGan;
+            document.getElementById('lMonthZhi').textContent = lMonthZhi;
+            document.getElementById('lDayGan').textContent = lDayGan;
+            document.getElementById('lDayZhi').textContent = lDayZhi;
+            document.getElementById('lHourGan').textContent = lHourGan;
+            document.getElementById('lHourZhi').textContent = lHourZhi;
+
             document.getElementById('centerWuXing').textContent = wuXingName;
             document.getElementById('centerYinYang').textContent = yinYangDesc;
             document.getElementById('mingZhu').textContent = mingZhu || '';
             document.getElementById('shenZhu').textContent = shenZhu || '';
+			
+			// 在 onCalculate 中，填充完节气四柱和农历四柱之后，添加以下代码：
+			document.querySelectorAll('#centerDisplay .four-pillars').forEach(function(el) {
+				el.style.gap = '1px';
+			});
 
             const isShun = (gender === 'male' && isYang) || (gender === 'female' && !isYang);
             const startIdx2 = ZiWeiCore.diZhi.indexOf(mingZhi);
@@ -1291,6 +1341,12 @@
 
             ZiWeiRender.renderStarsToPalace(starData, fourTransform, baseTransformMap, highTransformMap, lowTransformMap, highPrefix, lowPrefix);
 
+            // 如果是流年及以下，调整四化标签和十二神字号
+            if (mode === 'liuNian' || mode === 'liuYue' || mode === 'liuRi' || mode === 'liuShi') {
+                ZiWeiRender.adjustTransformFontSizeIfOverlap();
+                ZiWeiRender.adjustShenCharSize(mode);
+            }
+
             ZiWeiRender.bindPalaceClick(palaceClickHandler);
 
             errorDiv.style.display = 'none';
@@ -1305,6 +1361,7 @@
             document.querySelectorAll('.star-top-left').forEach(el => el.innerHTML = '');
             document.querySelectorAll('.da-xian').forEach(el => el.textContent = '');
             document.querySelectorAll('.cs-col, .sui-col, .jiang-col, .bo-col').forEach(el => el.innerHTML = '');
+            document.querySelectorAll('#lYearGan, #lYearZhi, #lMonthGan, #lMonthZhi, #lDayGan, #lDayZhi, #lHourGan, #lHourZhi').forEach(el => el.textContent = '');
         }
     }
 
@@ -1325,7 +1382,7 @@
 
     window.switchCalendar = switchCalendar;
 
-    // ---- 防抖刷新（解决横竖屏旋转后星耀排列问题） ----
+    // ---- 防抖刷新 ----
     var resizeTimer;
     function scheduleRecalc() {
         clearTimeout(resizeTimer);
@@ -1367,7 +1424,6 @@
         updateDiskControls();
         onCalculate();
 
-        // 监听 resize 和 orientationchange
         window.addEventListener('resize', scheduleRecalc);
         window.addEventListener('orientationchange', scheduleRecalc);
     });

@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=900, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
-    <title>三合紫微斗数在线排盘</title>
+    <title>三合紫微斗数在线排盘 by邵氏传</title>
+    <link rel="icon" href="icon.jpg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="icon.jpg">
     <script src="ziwei-core.js"></script>
     <script src="yuanpan.js"></script> 
-	<script src="liupan.js"></script> 
+    <script src="liupan.js"></script> 
     <script src="window.js"></script>
     <script src="app.js"></script>
     <style>
@@ -690,9 +692,7 @@
 <body>
 <div class="container">
     <div class="input-section">
-        <!-- 原局输入 -->
         <div class="top-row">
-            <!-- 公历生日输入 -->
             <div class="input-group" id="solarGroup">
                 <label>公历生日</label>
                 <div class="solar-date-group">
@@ -711,7 +711,6 @@
                 </div>
             </div>
 
-            <!-- 农历生日输入（初始隐藏） -->
             <div class="input-group lunar-input-group hidden" id="lunarGroup">
                 <label>农历生日</label>
                 <div class="lunar-date-group">
@@ -737,7 +736,6 @@
                 </div>
             </div>
 
-            <!-- 出生时辰（标签在右侧） -->
             <div class="input-group inline-label">
                 <select id="birthHour">
                     <option value="0" selected>子时 (23-1)</option>
@@ -756,17 +754,14 @@
                 <span class="right-label">出生时辰</span>
             </div>
 
-            <!-- 性别（无标签） -->
             <div class="input-group no-label">
                 <select id="gender"><option value="male" selected>男</option><option value="female">女</option></select>
             </div>
 
-            <!-- 盘位（无标签） -->
             <div class="input-group no-label">
                 <select id="diskType"><option value="tian" selected>天盘</option><option value="di">地盘</option><option value="ren">人盘</option></select>
             </div>
 
-            <!-- 日历切换和排盘按钮 -->
             <div class="input-group action-group">
                 <div class="calendar-toggle">
                     <button id="btnSolar" class="active" onclick="switchCalendar('solar')">公历</button>
@@ -776,7 +771,6 @@
             </div>
         </div>
 
-        <!-- 盘类型和流盘输入（一行） -->
         <div class="disk-options">
             <div class="radio-group">
                 <label><input type="radio" name="diskMode" value="yuan" checked> 原局</label>
