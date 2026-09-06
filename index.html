@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三合紫微斗数在线排盘</title>
+    <script src="ziwei-core.js"></script>
+    <script src="yuanpan.js"></script> 
+	<script src="liupan.js"></script> 
+    <script src="window.js"></script>
+    <script src="app.js"></script>
+    <style>
+        /* ---- 全局样式 ---- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: #f5f5f0;
+            color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            padding: 30px 20px;
+            min-height: 100vh;
+            overflow-x: auto;
+            min-width: 900px;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px 28px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+            border: 1px solid #e0ddd5;
+        }
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            letter-spacing: 6px;
+            color: #3a322a;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #5a5a5a;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #e0ddd5;
+            padding-bottom: 18px;
+            line-height: 1.6;
+        }
+        .input-section { background: #f9f8f6; border-radius: 14px; padding: 20px 24px; margin-bottom: 28px; border: 1px solid #e0ddd5; }
+
+        /* ---- 原局输入行 ---- */
+        .top-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 14px;
+            align-items: flex-end;
+            margin-bottom: 0;
+        }
+        .top-row .input-group {
+            display: flex;
+            flex-direction: column;
+            flex: 0 1 auto;
+            min-width: 80px;
+        }
+        .top-row .input-group label {
+            font-size: 12px;
+            color: #6a6a6a;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
+        .top-row .input-group.hidden {
+            display: none !important;
+        }
+
+        /* 公历和农历日期子项 */
+        .solar-date-group, .lunar-date-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 6px;
+        }
+        .solar-date-group .sub-input,
+        .lunar-date-group .sub-input {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        /* 统一输入框/下拉框高度、字体、边框 */
+        .top-row .input-group input,
+        .top-row .input-group select,
+        .disk-options .sub-group .inline-input input,
+        .disk-options .sub-group .inline-input select {
+            height: 30px;
+            padding: 2px 6px;
+            font-size: 13px;
+            border: 1px solid #d0cdc5;
+            border-radius: 4px;
+            background: #fff;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .solar-date-group .sub-input input,
+        .solar-date-group .sub-input select,
+        .lunar-date-group .sub-input input,
+        .lunar-date-group .sub-input select {
+            width: 58px;
+            height: 30px;
+            padding: 2px 4px;
+        }
+        .lunar-date-group .sub-input select#lunarLeap {
+            width: 56px;
+        }
+
+        /* 右侧标签统一风格 */
+        .right-label {
+            font-size: 12px;
+            color: #3a322a;
+            white-space: nowrap;
+            font-weight: 400;
+        }
+
+        /* 出生时辰行内布局 */
+        .top-row .input-group.inline-label {
+            flex-direction: row;
+            align-items: center;
+            gap: 4px;
+            min-width: auto;
+        }
+        .top-row .input-group select#birthHour {
+            width: 110px;
+            height: 30px;
+        }
+
+        /* 性别和盘位下拉（无标签） */
+        .top-row .input-group.no-label {
+            flex-direction: row;
+            min-width: 60px;
+        }
+        .top-row .input-group.no-label select {
+            width: 76px;
+            height: 30px;
+        }
+
+        /* 操作按钮组（日历切换 + 排盘） */
+        .action-group {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 8px;
+            min-width: auto;
+        }
+        .action-group .calendar-toggle {
+            display: flex;
+            gap: 4px;
+        }
+        .action-group .calendar-toggle button {
+            height: 30px;
+            padding: 0 12px;
+            font-size: 13px;
+            background: transparent;
+            border: 1px solid #c0bdb5;
+            color: #4a4a4a;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .action-group .calendar-toggle button.active {
+            background: linear-gradient(135deg, #b8a080, #8a7a60);
+            border: none;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(184,160,128,0.3);
+        }
+        .action-group .calendar-toggle button:hover:not(.active) {
+            background: #f0ede8;
+        }
+
+        .action-group .btn-primary {
+            height: 30px;
+            padding: 0 16px;
+            font-size: 13px;
+            background: linear-gradient(135deg, #b8a080, #8a7a60);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.25s;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .action-group .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(184,160,128,0.25);
+        }
+
+        /* ---- 盘类型和流盘输入 ---- */
+        .disk-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 10px;
+            margin-top: 14px;
+            border-top: 1px solid #e0ddd5;
+            padding-top: 14px;
+            align-items: center;
+        }
+        .disk-options .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            align-items: center;
+            flex: 0 1 auto;
+        }
+        .disk-options .radio-group label {
+            font-size: 13px;
+            color: #3a322a;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            white-space: nowrap;
+        }
+        .disk-options .radio-group input[type="radio"] {
+            margin: 0;
+            width: 13px;
+            height: 13px;
+            cursor: pointer;
+        }
+        .disk-options .sub-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 6px;
+            align-items: center;
+            flex: 1 1 auto;
+        }
+        .disk-options .sub-group .inline-input {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .disk-options .sub-group .inline-input .right-label {
+            font-size: 12px;
+            color: #3a322a;
+            white-space: nowrap;
+        }
+        .disk-options .sub-group .inline-input input,
+        .disk-options .sub-group .inline-input select {
+            height: 30px;
+            padding: 2px 4px;
+            font-size: 13px;
+            border: 1px solid #d0cdc5;
+            border-radius: 4px;
+            background: #fff;
+            outline: none;
+            font-family: inherit;
+        }
+        .disk-options .sub-group .inline-input input#calcYear {
+            width: 72px;
+        }
+        .disk-options .sub-group .inline-input input#calcMonth,
+        .disk-options .sub-group .inline-input input#calcDay {
+            width: 46px;
+        }
+        .disk-options .sub-group .inline-input select {
+            min-width: auto;
+            width: auto;
+        }
+        #daXianStepGroup select {
+            min-width: auto;
+            width: auto;
+        }
+        #liuNianTypeGroup select {
+            min-width: auto;
+            width: auto;
+        }
+        .disk-options .sub-group .inline-input input[disabled],
+        .disk-options .sub-group .inline-input select[disabled] {
+            background: #eae8e3;
+            color: #8a8a8a;
+            cursor: not-allowed;
+        }
+        .disk-options .sub-group .inline-input.hour-select select {
+            width: 60px;
+            min-width: auto;
+        }
+
+        /* 统一所有流盘按钮 */
+        .disk-options .btn-flow,
+        .disk-options .btn-nav {
+            height: 30px;
+            font-size: 13px;
+            padding: 0 8px;
+            border-radius: 6px;
+            font-family: inherit;
+            cursor: pointer;
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+        .disk-options .btn-flow {
+            background: linear-gradient(135deg, #b8a080, #8a7a60);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            transition: transform 0.15s, box-shadow 0.25s;
+        }
+        .disk-options .btn-flow:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(184,160,128,0.25);
+        }
+        .disk-options .btn-flow:disabled {
+            background: #ccc;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .disk-options .btn-nav {
+            background: transparent;
+            border: 1px solid #c0bdb5;
+            color: #4a4a4a;
+        }
+        .disk-options .btn-nav:hover:not(:disabled) {
+            background: #f0ede8;
+        }
+        .disk-options .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .result-display { display: none; }
+        .error-msg { color: #c62828; text-align: center; padding: 12px; font-size: 14px; }
+
+        /* ---- 宫格 ---- */
+        #palaceGrid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 6px;
+            margin-top: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            aspect-ratio: 4 / 3;
+            background: transparent;
+        }
+        .palace-cell {
+            aspect-ratio: auto;
+            background: #fcfcf9;
+            border: 1px solid #d0cdc5;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 10px 8px;
+            position: relative;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+            min-height: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+            cursor: pointer;
+        }
+        .palace-cell:not(.center):hover {
+            background: #f0ede8;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+            transform: translateY(-2px);
+        }
+        .palace-cell.ming-bg {
+            background-color: #FFDAB9 !important;
+            box-shadow: 0 4px 12px rgba(255, 180, 100, 0.3), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+            border-color: #d4a080;
+        }
+        .palace-cell.special-bg {
+            background-color: #fff9c4 !important;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+            border-color: #c4b080;
+        }
+
+        .da-xian {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: #3a322a;
+            letter-spacing: 0.5px;
+            z-index: 1;
+            pointer-events: none;
+            line-height: 1.2;
+        }
+        .star-top-left {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: flex-start;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+            pointer-events: none;
+            line-height: 1.2;
+            z-index: 2;
+            width: auto;
+            max-width: calc(100% - 6px);
+            overflow: hidden;
+        }
+        .star-item {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 1px;
+            line-height: 1.1;
+            flex-shrink: 0;
+        }
+        .star-item .star-name {
+            writing-mode: vertical-rl;
+            letter-spacing: 2px;
+        }
+        .star-item .star-miao {
+            color: #000000;
+            letter-spacing: 0;
+            line-height: 1.2;
+            margin-top: 1px;
+        }
+        .star-item .star-transform {
+            font-weight: bold;
+            padding: 0 2px;
+            border-radius: 2px;
+            color: #fff;
+            line-height: 1.3;
+            margin-top: 1px;
+        }
+
+        .flow-container {
+            position: absolute;
+            right: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1px;
+            z-index: 3;
+            pointer-events: none;
+            line-height: 1.2;
+        }
+        .flow-row {
+            display: flex;
+            flex-direction: row;
+            gap: 1px;
+            align-items: center;
+        }
+        .flow-star {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 0 1px;
+            line-height: 1.2;
+        }
+        .flow-star .star-name {
+            writing-mode: horizontal-tb;
+            letter-spacing: 1px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        /* ---- 右下角容器 ---- */
+        .right-info {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            display: flex;
+            flex-direction: row-reverse;
+            align-items: flex-start;
+            gap: 1px;
+            pointer-events: none;
+            z-index: 1;
+            font-size: 13px;
+            line-height: 1.2;
+        }
+        .ganzhi-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-weight: 600;
+            color: #000000;
+        }
+        .ganzhi-col .tian-gan-label,
+        .ganzhi-col .dizhi-label {
+            font-size: 13px;
+        }
+        .liu-pan-label {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 1px;
+        }
+        .liu-pan-label > .liu-level-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            padding: 0 2px;
+            border-radius: 3px;
+            line-height: 1.2;
+            min-width: 14px;
+            text-align: center;
+            background-color: #008080;
+        }
+
+        /* ---- 左下角容器 ---- */
+        .left-info {
+            position: absolute;
+            bottom: 3px;
+            left: 3px;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 1px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .left-info > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            flex: 0 0 auto;
+        }
+        .shen-char {
+            font-size: 13px;
+            font-weight: 600;
+            color: #000000;
+            line-height: 1.2;
+            display: block;
+            text-align: center;
+            height: 1.2em;
+        }
+
+        .palace-cell .palace-name {
+            position: absolute;
+            bottom: 6px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: #3a322a;
+            margin: 0;
+            padding: 0 4px;
+            line-height: 1.3;
+            pointer-events: none;
+        }
+        .palace-cell .palace-name .shen-mark { color: #b8860b; }
+        .palace-cell .palace-name.ming { color: #b8860b; }
+
+        #centerDisplay {
+            grid-column: 2 / 4;
+            grid-row: 2 / 4;
+            background: #f9f8f6;
+            border: 1px solid #d0cdc5;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 6px;
+            text-align: center;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+            min-height: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+        .center-date-info {
+            font-size: 13px;
+            color: #4a3a8a;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            line-height: 1.4;
+        }
+        .flow-info {
+            font-size: 13px;
+            color: #000000;
+            font-weight: normal;
+            margin: 2px 0 4px 0;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .flow-info .flow-label {
+            font-size: 13px;
+            color: #000000;
+            font-weight: normal;
+        }
+        .flow-info .flow-number {
+            font-size: 13px;
+            color: #000000;
+            font-weight: normal;
+        }
+        .flow-info .flow-ganzhi {
+            font-size: 13px;
+            font-weight: normal;
+            color: #000000;
+        }
+        .center-top { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 2px; }
+        .center-top .wu-xing, .center-top .yin-yang { font-size: 20px; color: #000000; font-weight: 700; letter-spacing: 2px; margin: 0; line-height: 1.2; }
+        #mingShenDisplay { font-size: 16px; font-weight: 600; margin: 2px 0; color: #000000; }
+        #mingShenDisplay .star-name-gold { color: #b8860b; }
+        .pillars-label { font-size: 11px; color: #6a6a6a; letter-spacing: 1px; margin-bottom: 2px; font-weight: 500; }
+        #centerDisplay .four-pillars { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 0; }
+        #centerDisplay .pillar-item { display: flex; flex-direction: column; align-items: center; min-width: 40px; }
+        #centerDisplay .pillar-item .label { font-size: 11px; color: #6a6a6a; letter-spacing: 1px; }
+        #centerDisplay .pillar-item .gan { font-size: 22px; font-weight: 600; color: #1a1a1a; line-height: 1.2; }
+        #centerDisplay .pillar-item .zhi { font-size: 22px; font-weight: 600; color: #4a4a4a; line-height: 1.2; }
+        .liu-pillars { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 4px; font-size: 14px; font-weight: 600; color: #008080; letter-spacing: 0.5px; }
+        .liu-pillars .liu-pillar-item { display: flex; flex-direction: column; align-items: center; }
+        .liu-pillars .liu-pillar-item .liu-label { font-size: 11px; color: #6a6a6a; font-weight: 500; letter-spacing: 1px; }
+        .liu-pillars .liu-pillar-item .liu-gan { font-size: 22px; font-weight: 600; color: #1a1a1a; line-height: 1.2; }
+        .liu-pillars .liu-pillar-item .liu-zhi { font-size: 22px; font-weight: 600; color: #4a4a4a; line-height: 1.2; }
+
+        /* ---- 底部声明 ---- */
+        .footer-declaration {
+            margin-top: 30px;
+            border-top: 1px solid #e0ddd5;
+            padding-top: 20px;
+            text-align: center;
+            color: #6a6a6a;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ---- 响应式 ---- */
+        @media (max-width: 950px) {
+            #palaceGrid { max-width: 90%; }
+            .disk-options { gap: 6px 8px; }
+            .disk-options .sub-group .inline-input input { width: 54px; }
+        }
+        @media (max-width: 750px) {
+            #palaceGrid { max-width: 100%; }
+            .palace-cell { padding: 6px 4px; }
+            .da-xian { font-size: 14px; bottom: 26px; }
+            .palace-cell .palace-name { font-size: 14px; bottom: 4px; }
+            .right-info { font-size: 12px; gap: 1px; }
+            .ganzhi-col .tian-gan-label, .ganzhi-col .dizhi-label { font-size: 12px; }
+            .liu-pan-label > .liu-level-col { font-size: 12px; padding: 0 1px; min-width: 12px; }
+            .left-info .shen-char { font-size: 12px; }
+            .center-top .wu-xing, .center-top .yin-yang { font-size: 18px; }
+            #mingShenDisplay { font-size: 15px; }
+            #centerDisplay .pillar-item .gan, #centerDisplay .pillar-item .zhi { font-size: 20px; }
+            .liu-pillars .liu-pillar-item .liu-gan, .liu-pillars .liu-pillar-item .liu-zhi { font-size: 20px; }
+            .disk-options .sub-group .inline-input input { width: 48px; }
+            .disk-options .sub-group .inline-input select { min-width: 70px; }
+            .disk-options .sub-group .inline-input.hour-select select { width: 60px; }
+            .flow-container { right: 1px; }
+            .top-row { gap: 8px 10px; }
+            .solar-date-group .sub-input input,
+            .solar-date-group .sub-input select,
+            .lunar-date-group .sub-input input,
+            .lunar-date-group .sub-input select {
+                width: 48px;
+                font-size: 12px;
+            }
+            .top-row .input-group select#birthHour { width: 90px; }
+            .top-row .input-group.no-label select { width: 65px; }
+        }
+        @media (max-width: 480px) {
+            .palace-cell { padding: 4px 2px; }
+            .da-xian { font-size: 12px; bottom: 22px; }
+            .palace-cell .palace-name { font-size: 12px; bottom: 3px; }
+            .right-info { font-size: 11px; gap: 1px; }
+            .ganzhi-col .tian-gan-label, .ganzhi-col .dizhi-label { font-size: 11px; }
+            .liu-pan-label > .liu-level-col { font-size: 11px; padding: 0 1px; min-width: 10px; }
+            .left-info .shen-char { font-size: 11px; }
+            .center-top .wu-xing, .center-top .yin-yang { font-size: 16px; }
+            #mingShenDisplay { font-size: 13px; }
+            #centerDisplay .pillar-item .gan, #centerDisplay .pillar-item .zhi { font-size: 18px; }
+            .liu-pillars .liu-pillar-item .liu-gan, .liu-pillars .liu-pillar-item .liu-zhi { font-size: 18px; }
+            .disk-options .sub-group .inline-input input { width: 42px; }
+            .disk-options .sub-group .inline-input select { min-width: 60px; }
+            .disk-options .sub-group .inline-input.hour-select select { width: 55px; }
+            .flow-container { right: 1px; gap: 1px; }
+            .flow-row { gap: 1px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="input-section">
+        <!-- 原局输入 -->
+        <div class="top-row">
+            <!-- 公历生日输入 -->
+            <div class="input-group" id="solarGroup">
+                <label>公历生日</label>
+                <div class="solar-date-group">
+                    <div class="sub-input">
+                        <input type="number" id="solarYear" value="2000" min="1900" max="2100" placeholder="年" step="1">
+                        <span class="right-label">年</span>
+                    </div>
+                    <div class="sub-input">
+                        <input type="number" id="solarMonth" value="1" min="1" max="12" placeholder="月" step="1">
+                        <span class="right-label">月</span>
+                    </div>
+                    <div class="sub-input">
+                        <input type="number" id="solarDay" value="1" min="1" max="31" placeholder="日" step="1">
+                        <span class="right-label">日</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 农历生日输入（初始隐藏） -->
+            <div class="input-group lunar-input-group hidden" id="lunarGroup">
+                <label>农历生日</label>
+                <div class="lunar-date-group">
+                    <div class="sub-input">
+                        <input type="number" id="lunarYear" value="1999" min="1900" max="2100" placeholder="年">
+                        <span class="right-label">年</span>
+                    </div>
+                    <div class="sub-input">
+                        <select id="lunarMonth">
+                            <option value="1">正月</option><option value="2">二月</option><option value="3">三月</option>
+                            <option value="4">四月</option><option value="5">五月</option><option value="6">六月</option>
+                            <option value="7">七月</option><option value="8">八月</option><option value="9">九月</option>
+                            <option value="10">十月</option><option value="11">冬月</option><option value="12">腊月</option>
+                        </select>
+                    </div>
+                    <div class="sub-input" style="flex:0 0 70px;">
+                        <select id="lunarLeap"><option value="0" selected>否</option><option value="1">是</option></select>
+                        <span class="right-label">闰月</span>
+                    </div>
+                    <div class="sub-input">
+                        <select id="lunarDay"></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 出生时辰（标签在右侧） -->
+            <div class="input-group inline-label">
+                <select id="birthHour">
+                    <option value="0" selected>子时 (23-1)</option>
+                    <option value="1">丑时 (1-3)</option>
+                    <option value="2">寅时 (3-5)</option>
+                    <option value="3">卯时 (5-7)</option>
+                    <option value="4">辰时 (7-9)</option>
+                    <option value="5">巳时 (9-11)</option>
+                    <option value="6">午时 (11-13)</option>
+                    <option value="7">未时 (13-15)</option>
+                    <option value="8">申时 (15-17)</option>
+                    <option value="9">酉时 (17-19)</option>
+                    <option value="10">戌时 (19-21)</option>
+                    <option value="11">亥时 (21-23)</option>
+                </select>
+                <span class="right-label">出生时辰</span>
+            </div>
+
+            <!-- 性别（无标签） -->
+            <div class="input-group no-label">
+                <select id="gender"><option value="male" selected>男</option><option value="female">女</option></select>
+            </div>
+
+            <!-- 盘位（无标签） -->
+            <div class="input-group no-label">
+                <select id="diskType"><option value="tian" selected>天盘</option><option value="di">地盘</option><option value="ren">人盘</option></select>
+            </div>
+
+            <!-- 日历切换和排盘按钮 -->
+            <div class="input-group action-group">
+                <div class="calendar-toggle">
+                    <button id="btnSolar" class="active" onclick="switchCalendar('solar')">公历</button>
+                    <button id="btnLunar" onclick="switchCalendar('lunar')">农历</button>
+                </div>
+                <button class="btn-primary" id="btnYuanPan">排盘</button>
+            </div>
+        </div>
+
+        <!-- 盘类型和流盘输入（一行） -->
+        <div class="disk-options">
+            <div class="radio-group">
+                <label><input type="radio" name="diskMode" value="yuan" checked> 原局</label>
+                <label><input type="radio" name="diskMode" value="daXian"> 大限</label>
+                <label><input type="radio" name="diskMode" value="liuNian"> 流年</label>
+                <label><input type="radio" name="diskMode" value="liuYue"> 流月</label>
+                <label><input type="radio" name="diskMode" value="liuRi"> 流日</label>
+                <label><input type="radio" name="diskMode" value="liuShi"> 流时</label>
+            </div>
+            <div class="sub-group">
+                <div class="inline-input" id="liuNianTypeGroup" style="display:none;">
+                    <select id="liuNianType"><option value="liuNian">流年</option><option value="xiaoXian">小限</option></select>
+                </div>
+                <div class="inline-input" id="daXianStepGroup" style="display:none;">
+                    <select id="daXianStep"></select>
+                </div>
+                <div class="inline-input">
+                    <input type="number" id="calcYear" value="" min="1900" max="2100" disabled>
+                    <span class="right-label">年</span>
+                </div>
+                <div class="inline-input">
+                    <input type="number" id="calcMonth" value="" min="1" max="12" disabled>
+                    <span class="right-label">月</span>
+                </div>
+                <div class="inline-input">
+                    <input type="number" id="calcDay" value="" min="1" max="31" disabled>
+                    <span class="right-label">日</span>
+                </div>
+                <div class="inline-input hour-select">
+                    <select id="calcHour" disabled>
+                        <option value="0">子</option><option value="1">丑</option><option value="2">寅</option><option value="3">卯</option>
+                        <option value="4">辰</option><option value="5">巳</option><option value="6">午</option><option value="7">未</option>
+                        <option value="8">申</option><option value="9">酉</option><option value="10">戌</option><option value="11">亥</option>
+                    </select>
+                    <span class="right-label">时</span>
+                </div>
+                <button class="btn-flow" id="btnFlow" disabled>流盘</button>
+                <button class="btn-nav" id="btnPrev" disabled>上一步</button>
+                <button class="btn-nav" id="btnNext" disabled>下一步</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="displayArea">
+        <div id="resultDisplay" class="result-display"></div>
+        <div id="palaceGrid"></div>
+        <div id="errorMsg" class="error-msg" style="display:none;"></div>
+    </div>
+</div>
+
+</body>
+</html>
