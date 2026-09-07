@@ -142,12 +142,20 @@
 
                 function createRowContainer() {
                     var container = document.createElement('div');
+                    container.className = 'transform-row';
                     container.style.display = 'flex';
                     container.style.flexDirection = 'column';
                     container.style.alignItems = 'center';
                     container.style.minHeight = '1.2em';
                     container.style.justifyContent = 'center';
                     container.style.flexShrink = '0';
+                    // 添加不可见占位符，确保空行也占位
+                    var placeholder = document.createElement('span');
+                    placeholder.textContent = '\u00A0';
+                    placeholder.style.opacity = '0';
+                    placeholder.style.fontSize = '0';
+                    placeholder.style.height = '0';
+                    container.appendChild(placeholder);
                     return container;
                 }
 
@@ -414,7 +422,10 @@
             if (!starContainer || !leftInfo) return;
             var starRect = starContainer.getBoundingClientRect();
             var leftRect = leftInfo.getBoundingClientRect();
-            if (starRect.bottom > leftRect.top) {
+            var isOverlap = starRect.bottom > leftRect.top;
+            var starItems = starContainer.querySelectorAll('.star-item');
+
+            if (isOverlap) {
                 var transformSpans = starContainer.querySelectorAll('.star-transform');
                 transformSpans.forEach(function(span) {
                     var currentSize = parseFloat(span.style.fontSize);
@@ -422,15 +433,22 @@
                         span.style.fontSize = (currentSize * 0.8) + 'px';
                     }
                 });
-                var starItems = starContainer.querySelectorAll('.star-item');
+
                 starItems.forEach(function(item) {
                     item.style.gap = '0px';
-                    var rows = item.querySelectorAll('.star-transform');
-                    rows.forEach(function(tSpan) {
-                        var parent = tSpan.parentElement;
-                        if (parent && parent.style) {
-                            parent.style.minHeight = '0.6em';
-                        }
+                    var rows = item.querySelectorAll('.transform-row');
+                    rows.forEach(function(row) {
+                        row.style.minHeight = '1em';
+                        row.style.justifyContent = 'center';
+                    });
+                });
+            } else {
+                starItems.forEach(function(item) {
+                    item.style.gap = '';
+                    var rows = item.querySelectorAll('.transform-row');
+                    rows.forEach(function(row) {
+                        row.style.minHeight = '';
+                        row.style.justifyContent = '';
                     });
                 });
             }
@@ -462,7 +480,6 @@
             if (!leftInfo || !palaceName) return;
             var leftRect = leftInfo.getBoundingClientRect();
             var nameRect = palaceName.getBoundingClientRect();
-
             if (leftRect.right > nameRect.left) {
                 hasOverlap = true;
                 return;
