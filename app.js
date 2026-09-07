@@ -101,30 +101,28 @@
         }
     }
 
-	function getDateDisplay(year, month, day) {
-		const lunar = ZiWeiCore.solarToLunar(year, month, day);
-		if (!lunar) return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')} (农历转换失败)`;
-		const lunarStr = `${lunar.year}年${lunar.isLeap ? '闰' : ''}${monthNames[lunar.month - 1]}${dayNames[lunar.day - 1]}`;
-    
-		// ---- 检查是否为节气日 ----
-		let termName = '';
-		try {
-			const terms = ZiWeiCore.getYearTerms(year);
-			const termNames = ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'];
-			const inputDate = new Date(Date.UTC(year, month - 1, day));
-			for (let i = 0; i < terms.length; i++) {
-				const t = terms[i];
-				if (t.getUTCFullYear() === year && t.getUTCMonth() === month - 1 && t.getUTCDate() === day) {
-					termName = termNames[i];
-					break;
-				}
-			}
-		} catch (e) {
-			// 如果年份不在节气表中（超出1900-2100），忽略错误
-		}
-		const suffix = termName ? ` ${termName}` : '';
-		return `公历 ${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}  ↔  农历 ${lunarStr}${suffix}`;
-	}
+    function getDateDisplay(year, month, day) {
+        const lunar = ZiWeiCore.solarToLunar(year, month, day);
+        if (!lunar) return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')} (农历转换失败)`;
+        const lunarStr = `${lunar.year}年${lunar.isLeap ? '闰' : ''}${monthNames[lunar.month - 1]}${dayNames[lunar.day - 1]}`;
+        
+        let termName = '';
+        try {
+            const terms = ZiWeiCore.getYearTerms(year);
+            const termNames = ['立春','惊蛰','清明','立夏','芒种','小暑','立秋','白露','寒露','立冬','大雪','小寒'];
+            const inputDate = new Date(Date.UTC(year, month - 1, day));
+            for (let i = 0; i < terms.length; i++) {
+                const t = terms[i];
+                if (t.getUTCFullYear() === year && t.getUTCMonth() === month - 1 && t.getUTCDate() === day) {
+                    termName = termNames[i];
+                    break;
+                }
+            }
+        } catch (e) {
+        }
+        const suffix = termName ? ` ${termName}` : '';
+        return `公历 ${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}  ↔  农历 ${lunarStr}${suffix}`;
+    }
 
     function buildDaXianOptions(wuXingNum) {
         const select = document.getElementById('daXianStep');
@@ -199,28 +197,59 @@
 
     function getFlowSolarFromInputs() {
         const mode = diskMode;
-        const year = parseInt(document.getElementById('calcYear').value, 10);
-        const month = parseInt(document.getElementById('calcMonth').value, 10);
-        const day = parseInt(document.getElementById('calcDay').value, 10);
-        const hour = parseInt(document.getElementById('calcHour').value, 10);
+        const yearEl = document.getElementById('calcYear');
+        const monthEl = document.getElementById('calcMonth');
+        const dayEl = document.getElementById('calcDay');
+        const hourEl = document.getElementById('calcHour');
+
+        const yearVal = yearEl.value.trim();
+        const monthVal = monthEl.value.trim();
+        const dayVal = dayEl.value.trim();
+        const hourVal = hourEl.value.trim();
+
+        function getNumber(value) {
+            if (value === '') return null;
+            const num = Number(value);
+            if (isNaN(num)) throw new Error('请输入有效数字');
+            return num;
+        }
 
         if (mode === 'liuNian') {
-            if (isNaN(year)) return null;
+            if (yearVal === '') return null;
+            const year = getNumber(yearVal);
+            if (year === null) return null;
+            if (year < 1900 || year > 2100) throw new Error('流年农历年份须在1900-2100之间');
             const solarDate = ZiWeiCore.lunarToSolar(year, 1, 1, false);
-            if (solarDate) {
-                return { year: solarDate.getUTCFullYear(), month: solarDate.getUTCMonth()+1, day: solarDate.getUTCDate(), hour: (isNaN(hour) ? 0 : hour) };
-            }
-            return null;
+            if (!solarDate) throw new Error('流年农历年份无效');
+            const hour = (hourVal === '') ? 0 : getNumber(hourVal);
+            return { year: solarDate.getUTCFullYear(), month: solarDate.getUTCMonth()+1, day: solarDate.getUTCDate(), hour: (hour === null ? 0 : hour) };
         } else if (mode === 'liuYue') {
-            if (isNaN(year) || isNaN(month)) return null;
+            if (yearVal === '' || monthVal === '') return null;
+            const year = getNumber(yearVal);
+            const month = getNumber(monthVal);
+            if (year === null || month === null) return null;
+            if (year < 1900 || year > 2100) throw new Error('流月年份须在1900-2100之间');
+            if (month < 1 || month > 12) throw new Error('流月月份须在1-12之间');
             const solarDate = ZiWeiCore.lunarToSolar(year, month, 1, false);
-            if (solarDate) {
-                return { year: solarDate.getUTCFullYear(), month: solarDate.getUTCMonth()+1, day: solarDate.getUTCDate(), hour: (isNaN(hour) ? 0 : hour) };
-            }
-            return null;
+            if (!solarDate) throw new Error('流月农历年月不存在，请检查');
+            const hour = (hourVal === '') ? 0 : getNumber(hourVal);
+            return { year: solarDate.getUTCFullYear(), month: solarDate.getUTCMonth()+1, day: solarDate.getUTCDate(), hour: (hour === null ? 0 : hour) };
         } else if (mode === 'liuRi' || mode === 'liuShi') {
-            if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
-            return { year, month, day, hour: (isNaN(hour) ? 0 : hour) };
+            if (yearVal === '' || monthVal === '' || dayVal === '') return null;
+            const year = getNumber(yearVal);
+            const month = getNumber(monthVal);
+            const day = getNumber(dayVal);
+            if (year === null || month === null || day === null) return null;
+            if (year < 1900 || year > 2100) throw new Error('流日年份须在1900-2100之间');
+            if (month < 1 || month > 12) throw new Error('流日月份须在1-12之间');
+            if (day < 1 || day > 31) throw new Error('流日日期须在1-31之间');
+            // 检查日期是否存在
+            const testDate = new Date(year, month-1, day);
+            if (testDate.getFullYear() !== year || testDate.getMonth() !== month-1 || testDate.getDate() !== day) {
+                throw new Error('流日日期不存在，请检查');
+            }
+            const hour = (hourVal === '') ? 0 : getNumber(hourVal);
+            return { year, month, day, hour: (hour === null ? 0 : hour) };
         }
         return null;
     }
@@ -574,6 +603,7 @@
     }
 
     function doFlowPan() {
+        resetHighlightMode();
         onCalculate();
     }
 
@@ -717,7 +747,6 @@
             }
             document.getElementById('centerDateInfo').textContent = getDateDisplay(displayYear, displayMonth, displayDay);
 
-            // ---- 节气四柱 ----
             if (pillars) {
                 document.getElementById('cYearGan').textContent = pillars.year[0];
                 document.getElementById('cYearZhi').textContent = pillars.year[1];
@@ -729,17 +758,14 @@
                 document.getElementById('cHourZhi').textContent = pillars.hour[1];
             }
 
-            // ---- 农历四柱（修正：避免重复声明 monthZhi） ----
             const lunarYearVal = parseInt(document.getElementById('lunarYear').value);
             const lunarYearGanZhi = ZiWeiCore.getYearGanZhiByLunarYear(lunarYearVal);
             const lYearGan = lunarYearGanZhi[0];
             const lYearZhi = lunarYearGanZhi[1];
 
-            // 月支：正月=寅，二月=卯 ... 腊月=丑（使用有效月份）
             const lMonthZhi = ZiWeiCore.diZhi[(effectiveMonthOriginal + 1) % 12];
-            const lMonthGan = ganZhiMap[lMonthZhi]; // 五虎遁定月干
+            const lMonthGan = ganZhiMap[lMonthZhi];
 
-            // 日柱和时柱与节气相同（公历日干支和时干支）
             const lDayGan = pillars.day[0];
             const lDayZhi = pillars.day[1];
             const lHourGan = pillars.hour[0];
@@ -758,11 +784,10 @@
             document.getElementById('centerYinYang').textContent = yinYangDesc;
             document.getElementById('mingZhu').textContent = mingZhu || '';
             document.getElementById('shenZhu').textContent = shenZhu || '';
-			
-			// 在 onCalculate 中，填充完节气四柱和农历四柱之后，添加以下代码：
-			document.querySelectorAll('#centerDisplay .four-pillars').forEach(function(el) {
-				el.style.gap = '1px';
-			});
+            
+            document.querySelectorAll('#centerDisplay .four-pillars').forEach(function(el) {
+                el.style.gap = '1px';
+            });
 
             const isShun = (gender === 'male' && isYang) || (gender === 'female' && !isYang);
             const startIdx2 = ZiWeiCore.diZhi.indexOf(mingZhi);
@@ -1341,7 +1366,6 @@
 
             ZiWeiRender.renderStarsToPalace(starData, fourTransform, baseTransformMap, highTransformMap, lowTransformMap, highPrefix, lowPrefix);
 
-            // 如果是流年及以下，调整四化标签和十二神字号
             if (mode === 'liuNian' || mode === 'liuYue' || mode === 'liuRi' || mode === 'liuShi') {
                 ZiWeiRender.adjustTransformFontSizeIfOverlap();
             }
@@ -1381,9 +1405,15 @@
 
     window.switchCalendar = switchCalendar;
 
-    // ---- 防抖刷新 ----
     var resizeTimer;
+    var lastWindowWidth = 0;
+
     function scheduleRecalc() {
+        var currentWidth = window.innerWidth;
+        if (currentWidth === lastWindowWidth) {
+            return;
+        }
+        lastWindowWidth = currentWidth;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function() {
             if (typeof onCalculate === 'function') {
@@ -1441,6 +1471,7 @@
             });
         }
 
+        lastWindowWidth = window.innerWidth;
         window.addEventListener('resize', scheduleRecalc);
         window.addEventListener('orientationchange', scheduleRecalc);
     });
