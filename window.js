@@ -149,7 +149,6 @@
                     container.style.minHeight = '1.2em';
                     container.style.justifyContent = 'center';
                     container.style.flexShrink = '0';
-                    // 添加不可见占位符，确保空行也占位
                     var placeholder = document.createElement('span');
                     placeholder.textContent = '\u00A0';
                     placeholder.style.opacity = '0';
@@ -302,10 +301,26 @@
             if (!yuanJuContainer || !flowContainer || !liuPanLabel) return;
 
             var grouped = ZiWeiCore.getStarsByPalace(zhi, starData);
+
+            var orderMap = {
+                'main': ['紫微','天机','太阳','武曲','天同','廉贞','天府','太阴','贪狼','巨门','天相','天梁','七杀','破军'],
+                'auspicious': ['左辅','右弼','天魁','天钺','文昌','文曲','禄存','天马'],
+                'malefic': ['火星','铃星','擎羊','陀罗','地空','地劫'],
+                'misc': ['华盖','天巫','红鸾','天喜','咸池','大耗','孤辰','寡宿','天哭','天虚','天刑','天姚','劫煞','阴煞','蜚廉','破碎','月解','年解','天空','截空','旬空','天德','月德','龙德','三台','八座','龙池','凤阁','台辅','封诰','恩光','天贵','天厨','天月','天官','天才','天福','天寿','天使','天伤']
+            };
+
             var yuanJuList = [];
             ['main','auspicious','malefic','misc'].forEach(function(cat) {
+                var order = orderMap[cat] || [];
+                order.forEach(function(name) {
+                    if (grouped[cat].indexOf(name) !== -1) {
+                        yuanJuList.push({ name: name, category: cat });
+                    }
+                });
                 grouped[cat].forEach(function(name) {
-                    yuanJuList.push({ name: name, category: cat });
+                    if (order.indexOf(name) === -1) {
+                        yuanJuList.push({ name: name, category: cat });
+                    }
                 });
             });
             var flowList = grouped.flow;
@@ -422,10 +437,7 @@
             if (!starContainer || !leftInfo) return;
             var starRect = starContainer.getBoundingClientRect();
             var leftRect = leftInfo.getBoundingClientRect();
-            var isOverlap = starRect.bottom > leftRect.top;
-            var starItems = starContainer.querySelectorAll('.star-item');
-
-            if (isOverlap) {
+            if (starRect.bottom > leftRect.top) {
                 var transformSpans = starContainer.querySelectorAll('.star-transform');
                 transformSpans.forEach(function(span) {
                     var currentSize = parseFloat(span.style.fontSize);
@@ -433,22 +445,13 @@
                         span.style.fontSize = (currentSize * 0.8) + 'px';
                     }
                 });
-
+                var starItems = starContainer.querySelectorAll('.star-item');
                 starItems.forEach(function(item) {
                     item.style.gap = '0px';
                     var rows = item.querySelectorAll('.transform-row');
                     rows.forEach(function(row) {
                         row.style.minHeight = '1em';
                         row.style.justifyContent = 'center';
-                    });
-                });
-            } else {
-                starItems.forEach(function(item) {
-                    item.style.gap = '';
-                    var rows = item.querySelectorAll('.transform-row');
-                    rows.forEach(function(row) {
-                        row.style.minHeight = '';
-                        row.style.justifyContent = '';
                     });
                 });
             }
