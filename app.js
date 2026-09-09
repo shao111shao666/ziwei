@@ -1509,8 +1509,6 @@
             try {
                 birthList = await SupabaseClient.loadBirthList(currentUser.id);
                 document.getElementById('birthListInfo').textContent = `共${birthList.length}条`;
-                const input = document.getElementById('loadBirthInput');
-                filterBirthList(input.value);
             } catch (e) {
                 console.error('加载列表失败', e);
             }
