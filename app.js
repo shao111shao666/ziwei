@@ -1591,32 +1591,108 @@
             }
         }
 
-        function showLoginDialog() {
-            const email = prompt('请输入邮箱');
-            if (!email) return;
-            const password = prompt('请输入密码');
-            if (!password) return;
-            SupabaseClient.signIn(email, password)
-                .then(user => {
+        const authModal = document.getElementById('authModal');
+        const authModalTitle = document.getElementById('authModalTitle');
+        const authEmail = document.getElementById('authEmail');
+        const authPassword = document.getElementById('authPassword');
+        const authUsername = document.getElementById('authUsername');
+        const authUsernameGroup = document.getElementById('authUsernameGroup');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const authCancelBtn = document.getElementById('authCancelBtn');
+        const authError = document.getElementById('authError');
+
+        let currentAuthMode = 'login'; // 'login' or 'register'
+
+        function openAuthModal(mode) {
+            currentAuthMode = mode;
+            authError.textContent = '';
+            authEmail.value = '';
+            authPassword.value = '';
+            authUsername.value = '';
+            if (mode === 'login') {
+                authModalTitle.textContent = '登录';
+                authSubmitBtn.textContent = '登录';
+                authUsernameGroup.style.display = 'none';
+            } else {
+                authModalTitle.textContent = '注册';
+                authSubmitBtn.textContent = '注册';
+                authUsernameGroup.style.display = 'block';
+            }
+            authModal.style.display = 'flex';
+            authEmail.focus();
+        }
+
+        function closeAuthModal() {
+            authModal.style.display = 'none';
+        }
+
+        async function handleAuthSubmit() {
+            const email = authEmail.value.trim();
+            const password = authPassword.value;
+            if (!email || !password) {
+                authError.textContent = '请填写完整信息';
+                return;
+            }
+            if (currentAuthMode === 'login') {
+                try {
+                    const user = await SupabaseClient.signIn(email, password);
                     currentUser = user;
                     updateUserUI();
-                })
-                .catch(e => alert('登录失败：' + e.message));
+                    closeAuthModal();
+                } catch (e) {
+                    authError.textContent = '登录失败：' + e.message;
+                }
+            } else {
+                const username = authUsername.value.trim();
+                if (!username) {
+                    authError.textContent = '请输入昵称';
+                    return;
+                }
+                try {
+                    const user = await SupabaseClient.signUp(email, password, username);
+                    currentUser = user;
+                    updateUserUI();
+                    closeAuthModal();
+                } catch (e) {
+                    authError.textContent = '注册失败：' + e.message;
+                }
+            }
+        }
+
+        authSubmitBtn.addEventListener('click', handleAuthSubmit);
+        authCancelBtn.addEventListener('click', closeAuthModal);
+        authModal.addEventListener('click', function(e) {
+            if (e.target === authModal) {
+                closeAuthModal();
+            }
+        });
+        authPassword.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAuthSubmit();
+            }
+        });
+        authEmail.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                authPassword.focus();
+            }
+        });
+        if (authUsername) {
+            authUsername.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAuthSubmit();
+                }
+            });
+        }
+
+        function showLoginDialog() {
+            openAuthModal('login');
         }
 
         function showRegisterDialog() {
-            const email = prompt('请输入邮箱');
-            if (!email) return;
-            const password = prompt('请输入密码（至少6位）');
-            if (!password) return;
-            const username = prompt('请输入昵称');
-            if (!username) return;
-            SupabaseClient.signUp(email, password, username)
-                .then(user => {
-                    currentUser = user;
-                    updateUserUI();
-                })
-                .catch(e => alert('注册失败：' + e.message));
+            openAuthModal('register');
         }
 
         SupabaseClient.getCurrentUser()
