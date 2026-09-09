@@ -12,9 +12,9 @@
     let highlightMode = 'auto';
     let manualHighlightZhi = null;
 
-    // ---- 用户状态 ----
     let currentUser = null;
     let birthList = [];
+	let lastSelectedName = '';
 
     function switchCalendar(type) {
         currentCalendar = type;
@@ -1499,8 +1499,12 @@
                 birthList = [];
                 document.getElementById('birthListInfo').textContent = '共0条';
                 document.getElementById('birthDropdown').style.display = 'none';
+                lastSelectedName = '';
                 const loadInput = document.getElementById('loadBirthInput');
-                if (loadInput) loadInput.value = '';
+                if (loadInput) {
+                    loadInput.value = '';
+                    loadInput.style.fontWeight = '';
+                }
             }
         }
 
@@ -1532,7 +1536,6 @@
                 div.addEventListener('click', function() {
                     loadBirthItem(item);
                     dropdown.style.display = 'none';
-                    document.getElementById('loadBirthInput').value = '';
                 });
                 dropdown.appendChild(div);
             });
@@ -1555,6 +1558,11 @@
             switchCalendar('solar');
             document.querySelector('input[name="diskMode"][value="yuan"]').checked = true;
             updateDiskControls();
+
+            const loadInput = document.getElementById('loadBirthInput');
+            loadInput.value = item.name;
+            loadInput.style.fontWeight = 'bold';
+            lastSelectedName = item.name;
         }
 
         async function handleSaveBirth() {
@@ -1717,6 +1725,10 @@
         const loadInput = document.getElementById('loadBirthInput');
         if (loadInput) {
             loadInput.addEventListener('input', function() {
+                if (this.value !== lastSelectedName) {
+                    this.style.fontWeight = '';
+                    lastSelectedName = '';
+                }
                 filterBirthList(this.value);
             });
             loadInput.addEventListener('blur', function() {
