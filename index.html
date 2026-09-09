@@ -6,6 +6,8 @@
     <title>三合紫微斗数在线排盘 by邵氏传</title>
     <link rel="icon" href="icon.jpg" type="image/jpeg">
     <link rel="apple-touch-icon" href="icon.jpg">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+    <script src="supabase.js"></script>
     <script src="ziwei-core.js"></script>
     <script src="yuanpan.js"></script> 
     <script src="liupan.js"></script> 
@@ -691,7 +693,15 @@
 </head>
 <body>
 <div class="container">
-    <div class="input-section">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div id="authStatus" style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
+            <button id="loginBtn" style="padding:4px 12px; font-size:13px; border:1px solid #c0bdb5; border-radius:4px; background:#fcfcf9; cursor:pointer; white-space:nowrap;">登录</button>
+            <button id="registerBtn" style="padding:4px 12px; font-size:13px; border:1px solid #c0bdb5; border-radius:4px; background:#fcfcf9; cursor:pointer; white-space:nowrap;">注册</button>
+            <span id="userDisplay" style="display:none; font-size:14px; font-weight:bold; color:#3a322a; white-space:nowrap;"></span>
+            <button id="logoutBtn" style="display:none; padding:4px 12px; font-size:13px; border:1px solid #c0bdb5; border-radius:4px; background:#fcfcf9; cursor:pointer; white-space:nowrap;">登出</button>
+        </div>
+    </div>
+	<div class="input-section">
         <div class="top-row">
             <div class="input-group" id="solarGroup">
                 <label>公历生日</label>
@@ -814,6 +824,19 @@
         </div>
     </div>
 
+    <div id="userSection" style="display:none; margin:20px 0 10px 0; padding:12px 16px; background:#f9f8f6; border:1px solid #e0ddd5; border-radius:10px;">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+            <div style="flex:2; min-width:120px;">
+                <input type="text" id="birthName" placeholder="名称 如：我的命盘" style="width:100%; height:30px; padding:0 6px; font-size:13px; border:1px solid #d0cdc5; border-radius:4px;">
+            </div>
+            <button id="saveBirthBtn" style="height:30px; padding:0 16px; font-size:13px; background:linear-gradient(135deg, #b8a080, #8a7a60); border:none; color:#fff; border-radius:6px; cursor:pointer; white-space:nowrap;">保存此盘</button>
+            <div style="flex:3; min-width:160px; position:relative; display:flex; align-items:center;">
+                <input type="text" id="loadBirthInput" placeholder="输入名称检索..." style="width:100%; height:30px; padding:0 6px; font-size:13px; border:1px solid #d0cdc5; border-radius:4px;">
+                <span id="birthListInfo" style="position:absolute; right:6px; font-size:12px; color:#999; pointer-events:none;">共0条</span>
+                <div id="birthDropdown" style="position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #d0cdc5; border-top:none; max-height:150px; overflow-y:auto; display:none; z-index:20; border-radius:0 0 4px 4px;"></div>
+            </div>
+        </div>
+    </div>
     <div id="displayArea">
         <div id="resultDisplay" class="result-display"></div>
         <div id="palaceGrid"></div>

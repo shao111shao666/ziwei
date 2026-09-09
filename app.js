@@ -12,6 +12,10 @@
     let highlightMode = 'auto';
     let manualHighlightZhi = null;
 
+    // ---- 用户状态 ----
+    let currentUser = null;
+    let birthList = [];
+
     function switchCalendar(type) {
         currentCalendar = type;
         const solarGroup = document.getElementById('solarGroup');
@@ -243,7 +247,6 @@
             if (year < 1900 || year > 2100) throw new Error('流日年份须在1900-2100之间');
             if (month < 1 || month > 12) throw new Error('流日月份须在1-12之间');
             if (day < 1 || day > 31) throw new Error('流日日期须在1-31之间');
-            // 检查日期是否存在
             const testDate = new Date(year, month-1, day);
             if (testDate.getFullYear() !== year || testDate.getMonth() !== month-1 || testDate.getDate() !== day) {
                 throw new Error('流日日期不存在，请检查');
@@ -1467,6 +1470,189 @@
                     cover.style.display = 'none';
                     toggleBtn.textContent = '隐藏';
                     toggleBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                }
+            });
+        }
+
+        function updateUserUI() {
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const userDisplay = document.getElementById('userDisplay');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const userSection = document.getElementById('userSection');
+
+            if (currentUser) {
+                userDisplay.textContent = currentUser.email;
+                loginBtn.style.display = 'none';
+                registerBtn.style.display = 'none';
+                userDisplay.style.display = 'inline';
+                logoutBtn.style.display = 'inline';
+                userSection.style.display = 'block';
+                refreshBirthList();
+            } else {
+                loginBtn.style.display = 'inline';
+                registerBtn.style.display = 'inline';
+                userDisplay.style.display = 'none';
+                userDisplay.textContent = '';
+                logoutBtn.style.display = 'none';
+                userSection.style.display = 'none';
+                birthList = [];
+                document.getElementById('birthListInfo').textContent = '共0条';
+                document.getElementById('birthDropdown').style.display = 'none';
+                const loadInput = document.getElementById('loadBirthInput');
+                if (loadInput) loadInput.value = '';
+            }
+        }
+
+        async function refreshBirthList() {
+            if (!currentUser) return;
+            try {
+                birthList = await SupabaseClient.loadBirthList(currentUser.id);
+                document.getElementById('birthListInfo').textContent = `共${birthList.length}条`;
+                const input = document.getElementById('loadBirthInput');
+                filterBirthList(input.value);
+            } catch (e) {
+                console.error('加载列表失败', e);
+            }
+        }
+
+        function filterBirthList(searchText) {
+            const dropdown = document.getElementById('birthDropdown');
+            const list = searchText.trim() === '' ? birthList : birthList.filter(item => item.name.toLowerCase().includes(searchText.toLowerCase()));
+            if (list.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            dropdown.style.display = 'block';
+            dropdown.innerHTML = '';
+            list.forEach(item => {
+                const div = document.createElement('div');
+                div.style.padding = '4px 8px';
+                div.style.cursor = 'pointer';
+                div.style.fontSize = '13px';
+                div.textContent = item.name;
+                div.addEventListener('click', function() {
+                    loadBirthItem(item);
+                    dropdown.style.display = 'none';
+                    document.getElementById('loadBirthInput').value = '';
+                });
+                dropdown.appendChild(div);
+            });
+        }
+		
+        function loadBirthItem(item) {
+            document.getElementById('solarYear').value = item.solar_year;
+            document.getElementById('solarMonth').value = item.solar_month;
+            document.getElementById('solarDay').value = item.solar_day;
+            document.getElementById('birthHour').value = item.hour_index;
+            document.getElementById('gender').value = item.gender;
+            document.getElementById('diskType').value = 'tian';
+            const lunar = ZiWeiCore.solarToLunar(item.solar_year, item.solar_month, item.solar_day);
+            if (lunar) {
+                document.getElementById('lunarYear').value = lunar.year;
+                document.getElementById('lunarMonth').value = lunar.month;
+                document.getElementById('lunarLeap').value = lunar.isLeap ? 1 : 0;
+                document.getElementById('lunarDay').value = lunar.day;
+            }
+            switchCalendar('solar');
+            document.querySelector('input[name="diskMode"][value="yuan"]').checked = true;
+            updateDiskControls();
+        }
+
+        async function handleSaveBirth() {
+            if (!currentUser) {
+                alert('请先登录');
+                return;
+            }
+            const name = document.getElementById('birthName').value.trim();
+            if (!name) {
+                alert('请输入生辰名称');
+                return;
+            }
+            let birthInfo;
+            try {
+                birthInfo = getBirthDateInfo(); 
+            } catch (e) {
+                alert('当前生辰信息无效，请先正确填写日期');
+                return;
+            }
+            const birthData = {
+                solarYear: birthInfo.birthYear,
+                solarMonth: birthInfo.birthMonth,
+                solarDay: birthInfo.birthDay,
+                hourIndex: parseInt(document.getElementById('birthHour').value, 10),
+                gender: document.getElementById('gender').value
+            };
+            try {
+                await SupabaseClient.saveBirthData(currentUser.id, name, birthData);
+                alert('保存成功');
+                document.getElementById('birthName').value = '';
+                await refreshBirthList();
+            } catch (e) {
+                alert('保存失败：' + e.message);
+            }
+        }
+
+        function showLoginDialog() {
+            const email = prompt('请输入邮箱');
+            if (!email) return;
+            const password = prompt('请输入密码');
+            if (!password) return;
+            SupabaseClient.signIn(email, password)
+                .then(user => {
+                    currentUser = user;
+                    updateUserUI();
+                })
+                .catch(e => alert('登录失败：' + e.message));
+        }
+
+        function showRegisterDialog() {
+            const email = prompt('请输入邮箱');
+            if (!email) return;
+            const password = prompt('请输入密码（至少6位）');
+            if (!password) return;
+            const username = prompt('请输入昵称');
+            if (!username) return;
+            SupabaseClient.signUp(email, password, username)
+                .then(user => {
+                    currentUser = user;
+                    updateUserUI();
+                })
+                .catch(e => alert('注册失败：' + e.message));
+        }
+
+        SupabaseClient.getCurrentUser()
+            .then(user => {
+                if (user) {
+                    currentUser = user;
+                    updateUserUI();
+                }
+            })
+            .catch(() => {});
+
+        document.getElementById('loginBtn').addEventListener('click', showLoginDialog);
+        document.getElementById('registerBtn').addEventListener('click', showRegisterDialog);
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try {
+                await SupabaseClient.signOut();
+            } catch (e) { /* ignore */ }
+            currentUser = null;
+            updateUserUI();
+        });
+        document.getElementById('saveBirthBtn').addEventListener('click', handleSaveBirth);
+        const loadInput = document.getElementById('loadBirthInput');
+        if (loadInput) {
+            loadInput.addEventListener('input', function() {
+                filterBirthList(this.value);
+            });
+            loadInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    document.getElementById('birthDropdown').style.display = 'none';
+                }, 200);
+            });
+            loadInput.addEventListener('focus', function() {
+                if (birthList.length > 0) {
+                    filterBirthList(this.value);
                 }
             });
         }
