@@ -282,12 +282,16 @@
         if (age <= 0) return 1;
 
         const hourIdx = parseInt(document.getElementById('birthHour').value, 10);
+        const diskType = document.getElementById('diskType').value;
+
         const mingShen = ZiWeiCore.getMingShen(birthLunar.month, birthLunar.day, birthLunar.isLeap, hourIdx);
-        const mingZhi = mingShen.ming;
+        const adjusted = ZiWeiCore.getAdjustedPalaceInfo(mingShen.ming, mingShen.shen, diskType);
+        const actualMingZhi = adjusted.ming;
+
         const yearGan = ZiWeiCore.getFourPillars(birthYear, birthMonth, birthDay, hourIdx).year[0];
         const palaceGanMap = ZiWeiCore.getPalaceGanZhi(yearGan);
-        const mingGan = palaceGanMap[mingZhi];
-        const wuXing = ZiWeiCore.getWuXing(mingGan, mingZhi);
+        const mingGan = palaceGanMap[actualMingZhi];
+        const wuXing = ZiWeiCore.getWuXing(mingGan, actualMingZhi);
         const wuXingNum = wuXing.num;
         if (wuXingNum <= 0) return 1;
 
