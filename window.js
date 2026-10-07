@@ -56,11 +56,11 @@
         var miscMaxSize = fixedSize;
 
         var flowColorMap = {
-            '限': '#00CED1',
-            '年': '#FF8C00',
-            '月': '#8B6B3D',
-            '日': '#E91E63',
-            '时': '#607D8B'
+            '限': '#E91E63',
+            '年': '#2196F3',
+            '月': '#3CB371',
+            '日': '#FF8C00',
+            '时': '#8B6B3D'
         };
 
         function getFlowColor(starName) {
