@@ -15,7 +15,6 @@
     let currentUser = null;
     let birthList = [];
 	let lastSelectedName = '';
-	let lastSelectedId = null;
 
     function switchCalendar(type) {
         currentCalendar = type;
@@ -1399,13 +1398,6 @@
     function initControls() {
         document.getElementById('btnYuanPan').addEventListener('click', function() {
             document.querySelector('input[name="diskMode"][value="yuan"]').checked = true;
-            const loadInput = document.getElementById('loadBirthInput');
-            if (loadInput) {
-                loadInput.value = '';
-                loadInput.style.fontWeight = '';
-            }
-            lastSelectedName = '';
-			lastSelectedId = null;
             updateDiskControls();
             onCalculate();
         });
@@ -1512,7 +1504,6 @@
                 document.getElementById('birthListInfo').textContent = '共0条';
                 document.getElementById('birthDropdown').style.display = 'none';
                 lastSelectedName = '';
-				lastSelectedId = null;
                 const loadInput = document.getElementById('loadBirthInput');
                 if (loadInput) {
                     loadInput.value = '';
@@ -1576,7 +1567,6 @@
             loadInput.value = item.name;
             loadInput.style.fontWeight = 'bold';
             lastSelectedName = item.name;
-			lastSelectedId = item.id;
         }
 
         async function handleSaveBirth() {
@@ -1612,36 +1602,7 @@
                 alert('保存失败：' + e.message);
             }
         }
-        async function handleDeleteBirth() {
-            if (!currentUser) {
-                alert('请先登录');
-                return;
-            }
-            if (!lastSelectedId) {
-                alert('请先在检索框中选择要删除的盘');
-                return;
-            }
-            const selectedItem = birthList.find(item => item.id === lastSelectedId);
-            const name = selectedItem ? selectedItem.name : '该盘';
-            if (!confirm(`确定删除「${name}」吗？此操作不可恢复。`)) {
-                return;
-            }
-            try {
-                await SupabaseClient.deleteBirthData(currentUser.id, lastSelectedId);
-                const loadInput = document.getElementById('loadBirthInput');
-                if (loadInput) {
-                    loadInput.value = '';
-                    loadInput.style.fontWeight = '';
-                }
-                lastSelectedName = '';
-                lastSelectedId = null;
-                await refreshBirthList();
-                alert('删除成功');
-            } catch (e) {
-                alert('删除失败：' + e.message);
-            }
-        }
-		
+
         const authModal = document.getElementById('authModal');
         const authModalTitle = document.getElementById('authModalTitle');
         const authEmail = document.getElementById('authEmail');
@@ -1684,6 +1645,16 @@
                 authError.textContent = '请填写完整信息';
                 return;
             }
+
+            function buildErrorMessage(e, action) {
+                const msg = (e && e.message) ? e.message : '';
+                const lower = msg.toLowerCase();
+                if (lower.includes('failed to fetch') || lower.includes('networkerror') || lower.includes('load failed')) {
+                    return '网络波动，请尝试切换运营商（移动/联通/电信）后重试' + action;
+                }
+                return action + '失败：' + msg;
+            }
+
             if (currentAuthMode === 'login') {
                 try {
                     const user = await SupabaseClient.signIn(email, password);
@@ -1691,7 +1662,7 @@
                     updateUserUI();
                     closeAuthModal();
                 } catch (e) {
-                    authError.textContent = '登录失败：' + e.message;
+                    authError.textContent = buildErrorMessage(e, '登录');
                 }
             } else {
                 const username = authUsername.value.trim();
@@ -1705,7 +1676,7 @@
                     updateUserUI();
                     closeAuthModal();
                 } catch (e) {
-                    authError.textContent = '注册失败：' + e.message;
+                    authError.textContent = buildErrorMessage(e, '注册');
                 }
             }
         }
@@ -1765,7 +1736,6 @@
             updateUserUI();
         });
         document.getElementById('saveBirthBtn').addEventListener('click', handleSaveBirth);
-		document.getElementById('deleteBirthBtn').addEventListener('click', handleDeleteBirth);
         const loadInput = document.getElementById('loadBirthInput');
         if (loadInput) {
             loadInput.addEventListener('input', function() {
