@@ -1,7 +1,7 @@
 // supabase.js
 (function() {
     'use strict';
-    const SUPABASE_URL = 'https://ntigrmbmrswvjuplrwzv.supabase.co';
+	const SUPABASE_URL = 'https://supa.shaoshichuan-ziwei.com:8443';
     const SUPABASE_ANON_KEY = 'sb_publishable_expC8oZfAx-N3iXKrVFlNg_7qXaRaPz';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     async function getCurrentUser() {
